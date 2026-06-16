@@ -5,7 +5,6 @@ based on a name list gives back a name list thats optimized for printing double 
 
 This is a simple browser-based tool that lets you drag and drop an Excel file, transform its rows using predefined patterns, and preview/export the result for name tag printing <3
 
----
 
 ## Features
 - Drag & drop Excel (.xlsx) files
@@ -15,7 +14,6 @@ This is a simple browser-based tool that lets you drag and drop an Excel file, t
 - Live table preview of original and transformed data
 - Export transformed data as a new Excel file (.xlsx)
 
----
 
 ## How it works
 
