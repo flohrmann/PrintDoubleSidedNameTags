@@ -14,7 +14,7 @@
 - export transformed data as a new excel file (.xlsx)
 
 
-## How it works
+## ~ how it works ~
 
 ### download
 1. click on the file (GetDoubleSidedNameTags.html)
