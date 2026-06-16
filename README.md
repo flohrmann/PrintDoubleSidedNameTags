@@ -21,12 +21,12 @@
 2. click **download raw file** (or “download”)
 3. save it to your computer
 
-### Run locally
+### run locally
 1. go into the folder you safed the file into
 2. double-click the HTML file (GetDoubleSidedNameTags.html)
 --> this will open in your browser (Chrome, Firefox, Edge, etc.)
 
-### Using the tool
+### using the tool
 1. select a transformation pattern (e.g. 4-row or 8-row mode)
 2. drag and drop an .xlsx file into the drop zone
 --> view: original table & transformed table
@@ -34,5 +34,5 @@
 
 
 
-feel free to use and adapt this however you want!
+feel free to use and adapt this however you want! (or if youre maria: ask me/vlad/zp for help <3)
 
