@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel Row Transformer</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+
+#dropZone {
+    border: 3px dashed #888;
+    border-radius: 10px;
+    padding: 50px;
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+#dropZone.dragover {
+    border-color: #0078d7;
+    background: #eef7ff;
+}
+
+table {
+    border-collapse: collapse;
+    margin-top: 10px;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+}
+
+tr:nth-child(even) {
+    background: #f7f7f7;
+}
+
+h2 {
+    margin-top: 30px;
+}
+</style>
+</head>
+<body>
+
+
+
+<h1>excel row transformer for double sided printing </h1>
+
+<div style="background:#f5f5f5;padding:12px;border-radius:8px;margin-bottom:20px;">
+    <strong>how it works:</strong>
+    <p>
+        this will help you generate front/back print layouts for name tags <3
+    </p>
+
+    <p>
+        example input (.xml):
+        <br>
+        <code>Fani (1)</code><br>
+		<code>Mara (2)</code><br>
+		<code>Vlad (3)</code><br>
+        <code>Alex (4)</code>
+    </p>
+	    <p>
+        example output (.xml):
+        <br>
+        <code>Fani (1)</code><br>
+		<code>Mara (2)</code><br>
+		<code>Vlad (3)</code><br>
+        <code>Alex (4)</code><br>
+		
+		<code>Mara (2)</code><br>
+		<code>Fani (1)</code><br>
+        <code>Alex (4) </code><br>
+		<code>Vlad (3)</code>
+		
+    </p>
+	
+
+<p>
+    if you were to print it would look like:
+</p>
+
+
+<div style="display:flex;gap:20px;align-items:center;">
+
+    <!-- FRONT -->
+    <div>
+        <div style="font-size:12px;margin-bottom:6px;">front</div>
+        <div style="
+            width:160px;
+            height:160px;
+            border:2px solid #000;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            font-family:Arial;
+            font-size:14px;
+            gap:6px;
+        ">
+            <div>Fani (1) Mara (2) </div>
+            <div>Vlad (3) Alex (4)</div>
+        </div>
+    </div>
+
+    <!-- BACK -->
+    <div>
+        <div style="font-size:12px;margin-bottom:6px;">back</div>
+        <div style="
+            width:160px;
+            height:160px;
+            border:2px solid #000;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            font-family:Arial;
+            font-size:14px;
+            gap:6px;
+        ">
+             <div>Mara (2) Fani (1)</div>
+             <div>Alex (4) Vlad (3) </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+    <p style="margin-bottom:0;">
+        choose a pattern below depending on your print layout (4 or 8 names per page): 
+    </p>
+</div>
+
+
+<label for="patternSelect">
+    transformation pattern:
+</label>
+
+<select id="patternSelect">
+    <option value="4">
+        4 rows → [1,2,3,4,2,1,4,3]
+    </option>
+
+    <option value="8">
+        8 rows → [1,2,3,4,5,6,7,8,2,1,4,3,6,5,8,7]
+    </option>
+</select>
+
+<br><br>
+
+
+<div id="dropZone">
+    Drop an Excel (.xlsx) file here
+</div>
+
+<button id="downloadXlsxBtn" disabled>
+    Download Transformed XLSX
+</button>
+
+<div id="output"></div>
+
+<script>
+
+// =========================
+// Transformation Functions
+// =========================
+const PATTERNS = {
+    4: {
+        chunkSize: 4,
+        folge: [1,2,3,4,2,1,4,3]
+    },
+
+    8: {
+        chunkSize: 8,
+        folge: [1,2,3,4,5,6,7,8,2,1,4,3,6,5,8,7]
+    }
+};
+
+const patternSelect =
+    document.getElementById("patternSelect");
+	
+	
+	
+function chunkRows(rows, chunkSize = 4) {
+    const chunks = [];
+
+    for (let i = 0; i < rows.length; i += chunkSize) {
+        chunks.push(rows.slice(i, i + chunkSize));
+    }
+
+    return chunks;
+}
+
+function applyFolge(chunk, folge = [1,2,3,4,2,1,4,3]) {
+    const result = [];
+
+    for (const index of folge) {
+        const row = chunk[index - 1];
+
+        if (row !== undefined) {
+            result.push(row);
+        }
+    }
+
+    return result;
+}
+
+function transformRows(
+    rows,
+    chunkSize = 4,
+    folge = [1,2,3,4,2,1,4,3]
+) {
+    return chunkRows(rows, chunkSize)
+        .flatMap(chunk => applyFolge(chunk, folge));
+}
+
+// =========================
+// Table Rendering
+// =========================
+
+function rowsToTable(rows) {
+    if (!rows.length) return "<p>No data.</p>";
+
+    const maxCols = Math.max(
+        ...rows.map(row => row.length)
+    );
+
+    let html = "<table>";
+
+    for (const row of rows) {
+        html += "<tr>";
+
+        for (let i = 0; i < maxCols; i++) {
+            html += `<td>${row[i] ?? ""}</td>`;
+        }
+
+        html += "</tr>";
+    }
+
+    html += "</table>";
+
+    return html;
+}
+
+
+
+
+
+
+// =========================
+// Excel Handling
+// =========================
+
+
+// input output defs
+const dropZone = document.getElementById("dropZone");
+const output = document.getElementById("output");
+
+// download excel 
+const downloadXlsxBtn = document.getElementById("downloadXlsxBtn");
+let exportedHeader = [];
+let exportedRows = [];
+
+dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+});
+
+dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
+});
+
+dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+
+    const file = e.dataTransfer.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = event => {
+        const data = new Uint8Array(event.target.result);
+
+        const workbook = XLSX.read(data, {
+            type: "array"
+        });
+
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+
+        // convert sheet into array-of-arrays
+        const allRows = XLSX.utils.sheet_to_json(
+            worksheet,
+            { header: 1 }
+        );
+
+        // keep first row as header
+        const header = allRows[0];
+        const dataRows = allRows.slice(1);
+
+        //const transformedRows = transformRows(dataRows);
+		const selectedPattern = PATTERNS[patternSelect.value];
+
+		const transformedRows = transformRows(
+			dataRows,
+			selectedPattern.chunkSize,
+			selectedPattern.folge
+		);
+
+		// for excport
+		exportedHeader = header;
+		exportedRows = transformedRows;
+
+        output.innerHTML = `
+            <h2>Original Data</h2>
+            ${rowsToTable([header, ...dataRows])}
+
+            <h2>Transformed Data</h2>
+            ${rowsToTable([header, ...transformedRows])}
+        `;
+		downloadXlsxBtn.disabled = false;
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+downloadXlsxBtn.addEventListener("click", () => {
+
+    if (exportedRows.length === 0) {
+        alert("Load an Excel file first.");
+        return;
+    }
+
+    const worksheet = XLSX.utils.aoa_to_sheet([
+        exportedHeader,
+        ...exportedRows
+    ]);
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Transformed"
+    );
+
+    XLSX.writeFile(
+        workbook,
+        "transformed.xlsx"
+    );
+});
+
+
+</script>
+
+</body>
+</html>
